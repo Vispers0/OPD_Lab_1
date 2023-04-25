@@ -1,40 +1,41 @@
 from bs4 import BeautifulSoup  # Импорт библиотеки BeautifulSoup
 import requests                # Импорт библиотеки requests
+from fake_useragent import UserAgent # Импорт библиотекти Fake useragent
 
 
 # Функция, проводящяя парсинг сайта
 def parse():
     # URL, который будем парсить
-    url = 'https://omsk.biglion.ru/services/entertainment/'
+    url = 'https://pepper.ru/'
+    #Создаём объект класса UserAgent для построения хедера
+    ua = UserAgent(browsers=['edge'])
+    #Строим хедер с рандомным UserAgent
+    headers = {"User-Agent": ua.random}
     # Отправка GET-запроса на URL и запись ответа в переменную
-    response = requests.get(url)
+    response = requests.get(url=url, headers=headers)
     # Вывод код ответа HTTP
     print(response.status_code)
 
     # Записываем ответ в объект BeautifulSoup
     soup = BeautifulSoup(response.text, "html.parser")
     # Поиск всех контейнеров div, содержащих предложения со скидкой
-    discounts = soup.find_all("div", class_="card-item item bservices__deals_item")
-    # Первая половина для составления ссылки на товар/услугу
-    link_base = "https://omsk.biglion.ru/"
+    discounts = soup.find_all("article", class_="thread cept-thread-item thread--type-list imgFrame-container--scale thread--deal")
 
     # Проходимся по каждому предложению из полученных
     for item in discounts:
-        # В конце списка есть элемент, который содержит только картинку. Он игнорируется
-        if item.get("data-id") == "4984627":
-            break
-
         # Поиск названия товара/услуги и запись в переменную
-        title = item.find("a", class_="card-item__title").text
-        # Поиск размера скидки товара/услуги и запись в переменную
-        discount = item.find("span", class_="card-item__discount").text
-        # Поиск цены со скидкой товара/услуги и запись в переменную
-        new_price = item.find("span", class_="dc__price_new").text.strip().replace("\n", "").replace(" ", "")
-        # Поиск ссылки на покупку товара/услуги и запись в переменную
-        link = item.find("a", class_="card-item__title").get("href")
+        title = item.find("a", class_="cept-tt thread-link linkPlain thread-title--list js-thread-title").get("title")
+        degrees = item.find("span", class_="cept-vote-temp vote-temp vote-temp--hot")
+
+        if degrees is not None:
+            degrees = item.find("span", class_="cept-vote-temp vote-temp vote-temp--hot").text.strip()
+        else:
+            degrees = item.find("span", class_="cept-vote-temp vote-temp vote-temp--burn").text.strip()
+
+        link = item.find("a", class_="cept-tt thread-link linkPlain thread-title--list js-thread-title").get("href")
 
         # Форматированный вывод найденных данных
         print("Товар/Услуга: " + title)
-        print("Цена: " + new_price + " (скидка " + discount + ")")
-        print("Ссылка: " + link_base + link)
+        print("Градусы: " + degrees)
+        print("Ссылка: " + link)
         print("--------------------------------------------------------")
